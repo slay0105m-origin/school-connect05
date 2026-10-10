@@ -1,0 +1,46 @@
+name: SchoolConnect DevOps Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v6
+      - name: Vérifier que index.html existe
+        run: test -f index.html
+      - name: Vérifier le titre principal SchoolConnect
+        run: grep -q '<h1>SchoolConnect</h1>' index.html
+      - name: Confirmation
+        run: echo "Vérification réussie. SchoolConnect peut être déployé."
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v6
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Préparer l'artefact GitHub Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: '.'
+      - name: Déployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
